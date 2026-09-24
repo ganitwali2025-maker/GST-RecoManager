@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  ACCOUNTANT
+  VIEWER
+}
+
+enum ReconStatus {
+  MATCHED
+  PARTIAL_MATCH
+  MISMATCH
+  DUPLICATE
+  BOOK_ONLY
+  TWO_B_ONLY
+  REVIEW
+}
+
+enum ITCStatus {
+  CLAIMED
+  NOT_CLAIMED
+  BLOCKED
+  ELIGIBLE
+  REVERSED
+  REVIEW
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         UserRole   @default(VIEWER)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  auditLogs    AuditLog[]
+}
+
+model Company {
+  id           String   @id @default(uuid())
+  companyName  String
+  legalName    String?
+  gstin        String   @unique
+  pan          String?
+  address      String?
+  state        String?
+  stateCode    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  financialPeriods FinancialPeriod[]
+  bookInvoices     BookInvoice[]
+  gstr2bInvoices   GSTR2BInvoice[]
+  reconciliations  Reconciliation[]
+  itcRecords       ITCRecord[]
+  rcmRecords       RCMRecord[]
+
+  @@index([gstin])
+}
+
+model FinancialPeriod {
+  id            String   @id @default(uuid())
+  companyId     String
+  financialYear String
+  month         String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  bookInvoices    BookInvoice[]
+  gstr2bInvoices  GSTR2BInvoice[]
+  reconciliations Reconciliation[]
+  itcRecords      ITCRecord[]
+  rcmRecords      RCMRecord[]
+
+  @@unique([companyId, financialYear, month])
+  @@index([companyId])
+}
+
+model BookInvoice {
+  id                String   @id @default(uuid())
+  companyId         String
+  financialPeriodId String
+  supplierName      String?
+  supplierGstin     String?
+  invoiceNumber     String
+  invoiceDate       DateTime
+  taxableValue      Decimal  @db.Decimal(15, 2)
+  igst              Decimal  @default(0) @db.Decimal(15, 2)
+  cgst              Decimal  @default(0) @db.Decimal(15, 2)
+  sgst              Decimal  @default(0) @db.Decimal(15, 2)
+  cess              Decimal  @default(0) @db.Decimal(15, 2)
+  totalTax          Decimal  @default(0) @db.Decimal(15, 2)
+  invoiceValue      Decimal  @db.Decimal(15, 2)
+  itcEligible       Boolean  @default(true)
+  itcClaimed        Boolean  @default(false)
+  rcm               Boolean  @default(false)
+  source            String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  financialPeriod FinancialPeriod @relation(fields: [financialPeriodId], references: [id], onDelete: Cascade)
+  reconciliations Reconciliation[]
+
+  @@index([companyId])
+  @@index([financialPeriodId])
+  @@index([supplierGstin])
+  @@index([invoiceNumber])
+  @@index([invoiceDate])
+}
+
+model GSTR2BInvoice {
+  id                String   @id @default(uuid())
+  companyId         String
+  financialPeriodId String
+  supplierName      String?
+  supplierGstin     String?
+  invoiceNumber     String
+  invoiceDate       DateTime
+  taxableValue      Decimal  @db.Decimal(15, 2)
+  igst              Decimal  @default(0) @db.Decimal(15, 2)
+  cgst              Decimal  @default(0) @db.Decimal(15, 2)
+  sgst              Decimal  @default(0) @db.Decimal(15, 2)
+  cess              Decimal  @default(0) @db.Decimal(15, 2)
+  totalTax          Decimal  @default(0) @db.Decimal(15, 2)
+  invoiceValue      Decimal  @db.Decimal(15, 2)
+  itcAvailability   String?
+  reverseCharge     String?
+  source            String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  financialPeriod FinancialPeriod @relation(fields: [financialPeriodId], references: [id], onDelete: Cascade)
+  reconciliations Reconciliation[]
+
+  @@index([companyId])
+  @@index([financialPeriodId])
+  @@index([supplierGstin])
+  @@index([invoiceNumber])
+  @@index([invoiceDate])
+}
+
+model Reconciliation {
+  id                 String       @id @default(uuid())
+  companyId          String
+  financialPeriodId  String
+  bookInvoiceId      String?
+  gstr2bInvoiceId    String?
+  status             ReconStatus
+  reason             String?
+  taxableDifference  Decimal      @default(0) @db.Decimal(15, 2)
+  igstDifference     Decimal      @default(0) @db.Decimal(15, 2)
+  cgstDifference     Decimal      @default(0) @db.Decimal(15, 2)
+  sgstDifference     Decimal      @default(0) @db.Decimal(15, 2)
+  totalTaxDifference Decimal      @default(0) @db.Decimal(15, 2)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  financialPeriod FinancialPeriod  @relation(fields: [financialPeriodId], references: [id], onDelete: Cascade)
+  bookInvoice     BookInvoice?     @relation(fields: [bookInvoiceId], references: [id], onDelete: SetNull)
+  gstr2bInvoice   GSTR2BInvoice?   @relation(fields: [gstr2bInvoiceId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([financialPeriodId])
+  @@index([status])
+}
+
+model ITCRecord {
+  id                String     @id @default(uuid())
+  companyId         String
+  financialPeriodId String
+  source            String?
+  invoiceNumber     String?
+  supplierGstin     String?
+  igst              Decimal    @default(0) @db.Decimal(15, 2)
+  cgst              Decimal    @default(0) @db.Decimal(15, 2)
+  sgst              Decimal    @default(0) @db.Decimal(15, 2)
+  cess              Decimal    @default(0) @db.Decimal(15, 2)
+  totalITC          Decimal    @default(0) @db.Decimal(15, 2)
+  status            ITCStatus  @default(NOT_CLAIMED)
+  remarks           String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  financialPeriod FinancialPeriod @relation(fields: [financialPeriodId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([financialPeriodId])
+  @@index([status])
+  @@index([supplierGstin])
+}
+
+model RCMRecord {
+  id                String   @id @default(uuid())
+  companyId         String
+  financialPeriodId String
+  supplierName      String?
+  invoiceNumber     String?
+  invoiceDate       DateTime?
+  taxableValue      Decimal  @default(0) @db.Decimal(15, 2)
+  igst              Decimal  @default(0) @db.Decimal(15, 2)
+  cgst              Decimal  @default(0) @db.Decimal(15, 2)
+  sgst              Decimal  @default(0) @db.Decimal(15, 2)
+  totalTax          Decimal  @default(0) @db.Decimal(15, 2)
+  status            String?
+  remarks           String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  financialPeriod FinancialPeriod @relation(fields: [financialPeriodId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([financialPeriodId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([entity, entityId])
+}
