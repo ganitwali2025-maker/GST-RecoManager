@@ -7,14 +7,28 @@ import { taxTotal } from '../utils/invoice';
 import { useToast } from '../components/Toast';
 import KpiCard from '../components/KpiCard';
 import DataTable from '../components/DataTable';
+import { runReconciliation } from '../utils/reconciliation';
 
 export default function GSTR2B() {
   const navigate = useNavigate();
-  const { currentGstr2b, activeCompany, month, financialYear, clearCurrentPeriod } = useAppContext();
+  const { currentBooks, currentGstr2b, activeCompany, month, financialYear, clearCurrentPeriod, settings } = useAppContext();
   const { showToast } = useToast();
 
   const totalTaxable = currentGstr2b.reduce((a, r) => a + Number(r.taxable || 0), 0);
   const totalIgst = currentGstr2b.reduce((a, r) => a + Number(r.igst || 0), 0);
+
+  const reconRows = runReconciliation(currentBooks, currentGstr2b, settings.tolerance, settings.normalizeInvoice);
+  const statusMap = {};
+  reconRows.forEach(r => {
+    if (r.g2bId) {
+      statusMap[r.g2bId] = r.status;
+    }
+  });
+
+  const g2bWithStatus = currentGstr2b.map(g => ({
+    ...g,
+    recoStatus: statusMap[g.id]
+  }));
   const totalCgst = currentGstr2b.reduce((a, r) => a + Number(r.cgst || 0), 0);
   const totalSgst = currentGstr2b.reduce((a, r) => a + Number(r.sgst || 0), 0);
   const totalGst = currentGstr2b.reduce((a, r) => a + taxTotal(r), 0);
@@ -52,7 +66,7 @@ export default function GSTR2B() {
             )}
           </div>
         </div>
-        <DataTable rows={currentGstr2b} isBooks={false} dataType="gstr2b" />
+        <DataTable rows={g2bWithStatus} isBooks={false} dataType="gstr2b" />
       </div>
     </>
   );

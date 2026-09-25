@@ -9,21 +9,26 @@ import EmptyState from '../components/EmptyState';
 import { useToast } from '../components/Toast';
 
 export default function Reconciliation() {
-  const { currentBooks, currentGstr2b, activeCompany, month, financialYear, settings } = useAppContext();
+  const { currentBooks, currentGstr2b, activeCompany, month, financialYear, settings, resolutions } = useAppContext();
   const { showToast } = useToast();
   
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('Matched');
   const [searchQuery, setSearchQuery] = useState('');
 
   const rows = useMemo(() => 
-    runReconciliation(currentBooks, currentGstr2b, settings.tolerance, settings.normalizeInvoice),
-    [currentBooks, currentGstr2b, settings]
+    runReconciliation(currentBooks, currentGstr2b, settings.tolerance, settings.normalizeInvoice, resolutions),
+    [currentBooks, currentGstr2b, settings, resolutions]
   );
   
   const sum = useMemo(() => reconSummary(rows), [rows]);
 
   const filteredRows = useMemo(() => {
-    let base = filter === 'all' ? rows : rows.filter(r => r.status === filter);
+    let base = filter === 'all' ? rows : rows.filter(r => {
+      if (filter === 'Amount Mismatch') {
+        return ['Amount Mismatch', 'GST Mismatch', 'Date Mismatch', 'Taxable Value Mismatch', 'IGST Mismatch', 'CGST Mismatch', 'SGST Mismatch', 'Cess Mismatch', 'Multiple Match / Possible Match'].includes(r.status);
+      }
+      return r.status === filter;
+    });
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       base = base.filter(r => 
@@ -40,6 +45,7 @@ export default function Reconciliation() {
     const reconSheet = rows.map(r => ({
       Status: r.status, 'Invoice No': r.invoiceNo, Date: r.invoiceDate, GSTIN: r.gstin, Supplier: r.supplierName,
       'Books Taxable': r.booksTaxable, '2B Taxable': r.g2bTaxable, 'Books Tax': r.booksTax, '2B Tax': r.g2bTax, 'Diff (Tax)': r.diffTax,
+      Remark: r.remark || '',
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reconSheet), 'Reconciliation');
     XLSX.writeFile(wb, `ReconIQ_${(activeCompany?.name || 'Company').replace(/\s+/g, '_')}_${month}_FY${financialYear}_Recon.xlsx`);
@@ -88,12 +94,11 @@ export default function Reconciliation() {
       </div>
       
       <div className="filter-row">
-        <Chip val="all" label="All" count={sum.total} />
         <Chip val="Matched" label="Matched" count={sum.counts['Matched'] || 0} />
-        <Chip val="Amount Mismatch" label="Mismatch" count={sum.counts['Amount Mismatch'] || 0} />
-        <Chip val="Missing in 2B" label="Missing in 2B" count={sum.counts['Missing in 2B'] || 0} />
-        <Chip val="Missing in Books" label="Missing in Books" count={sum.counts['Missing in Books'] || 0} />
-        <Chip val="Duplicate" label="Duplicate" count={sum.counts['Duplicate'] || 0} />
+        <Chip val="Amount Mismatch" label="Mismatch" count={(sum.counts['Amount Mismatch']||0) + (sum.counts['GST Mismatch']||0) + (sum.counts['Date Mismatch']||0) + (sum.counts['Taxable Value Mismatch']||0) + (sum.counts['IGST Mismatch']||0) + (sum.counts['CGST Mismatch']||0) + (sum.counts['SGST Mismatch']||0) + (sum.counts['Cess Mismatch']||0) + (sum.counts['Multiple Match / Possible Match']||0)} />
+        <Chip val="Not in 2B" label="Not in 2B" count={sum.counts['Not in 2B'] || 0} />
+        <Chip val="Not in Books" label="Not in Books" count={sum.counts['Not in Books'] || 0} />
+        <Chip val="Duplicate Invoice" label="Duplicate" count={sum.counts['Duplicate Invoice'] || 0} />
       </div>
       
       <ReconTable rows={filteredRows} />

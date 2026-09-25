@@ -8,7 +8,7 @@ const PAGE_META = {
   '/dashboard': { title: 'Dashboard', sub: 'Audit intelligence overview' },
   '/liability': { title: 'Liability Dashboard', sub: 'Output GST vs Input GST, at a glance' },
   '/payment': { title: 'Payment Dashboard', sub: 'Final working ITC and Liability' },
-  '/books': { title: 'Books Purchase Data', sub: 'Purchase register as per your books' },
+  '/books': { title: 'Books Reco with 2B', sub: 'Central reconciliation control screen' },
   '/gstr2b': { title: 'GSTR-2B Data', sub: 'Auto-drafted ITC statement from GSTN' },
   '/rcmdata': { title: 'RCM Invoices', sub: 'Reverse charge purchases tracked separately from 2B' },
   '/reconciliation': { title: 'Reconciliation', sub: 'Books vs GSTR-2B, matched line by line' },

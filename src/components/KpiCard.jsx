@@ -1,15 +1,15 @@
 import React from 'react';
 import { ShoppingCart, FileText, FileDown, CheckCircle, AlertCircle, FileX, FileMinus, Copy, Activity } from 'lucide-react';
 
-export default function KpiCard({ label, val, sub, color, icon: CustomIcon, small }) {
+export default function KpiCard({ label, val, sub, color, icon: CustomIcon, small, onClick, active }) {
   let Icon = CustomIcon;
   if (!Icon) {
     const l = (label || '').toLowerCase();
     if (l.includes('purchase')) Icon = ShoppingCart;
     else if (l.includes('matched')) Icon = CheckCircle;
     else if (l.includes('mismatch')) Icon = AlertCircle;
-    else if (l.includes('missing in 2b')) Icon = FileMinus;
-    else if (l.includes('missing in books')) Icon = FileX;
+    else if (l.includes('missing in 2b') || l.includes('not in 2b')) Icon = FileMinus;
+    else if (l.includes('missing in books') || l.includes('not in books')) Icon = FileX;
     else if (l.includes('duplicate')) Icon = Copy;
     else if (l.includes('gstr-2b')) Icon = FileDown;
     else if (l.includes('books')) Icon = FileText;
@@ -22,7 +22,16 @@ export default function KpiCard({ label, val, sub, color, icon: CustomIcon, smal
   const iconSize = small ? 14 : 22;
 
   return (
-    <div className={`kpi ${small ? 'small' : ''}`}>
+    <div 
+      className={`kpi ${small ? 'small' : ''} ${active ? 'active' : ''} ${onClick ? 'clickable' : ''}`}
+      onClick={onClick}
+      style={{
+        cursor: onClick ? 'pointer' : 'default',
+        border: active ? `2px solid ${color}` : undefined,
+        transform: active ? 'scale(1.02)' : undefined,
+        boxShadow: active ? '0 4px 12px rgba(0,0,0,0.1)' : undefined
+      }}
+    >
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         width: badgeSize, height: badgeSize, borderRadius: small ? '7px' : '10px',

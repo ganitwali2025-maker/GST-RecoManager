@@ -15,17 +15,25 @@ const REPORT_TABS = ['Match Summary', 'Supplier-wise', 'Month-wise', 'Mismatch R
 const STATUS_META = {
   'Matched': { cls: 'green', dot: 'green' },
   'Amount Mismatch': { cls: 'yellow', dot: 'yellow' },
-  'Missing in 2B': { cls: 'red', dot: 'red' },
-  'Missing in Books': { cls: 'blue', dot: 'blue' },
-  'Duplicate': { cls: 'purple', dot: 'purple' },
+  'GST Mismatch': { cls: 'yellow', dot: 'yellow' },
+  'Date Mismatch': { cls: 'yellow', dot: 'yellow' },
+  'Taxable Value Mismatch': { cls: 'yellow', dot: 'yellow' },
+  'IGST Mismatch': { cls: 'yellow', dot: 'yellow' },
+  'CGST Mismatch': { cls: 'yellow', dot: 'yellow' },
+  'SGST Mismatch': { cls: 'yellow', dot: 'yellow' },
+  'Cess Mismatch': { cls: 'yellow', dot: 'yellow' },
+  'Not in 2B': { cls: 'red', dot: 'red' },
+  'Not in Books': { cls: 'blue', dot: 'blue' },
+  'Duplicate Invoice': { cls: 'purple', dot: 'purple' },
+  'Multiple Match / Possible Match': { cls: 'yellow', dot: 'yellow' },
 };
 
 export default function Reports() {
-  const { currentBooks, currentGstr2b, currentRcm, activeCompany, month, financialYear, settings, books, gstr2b, FY_LIST, MONTHS } = useAppContext();
+  const { currentBooks, currentGstr2b, currentRcm, activeCompany, month, financialYear, settings, books, gstr2b, FY_LIST, MONTHS, resolutions } = useAppContext();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState(REPORT_TABS[0]);
 
-  const rows = runReconciliation(currentBooks, currentGstr2b, settings.tolerance, settings.normalizeInvoice);
+  const rows = runReconciliation(currentBooks, currentGstr2b, settings.tolerance, settings.normalizeInvoice, resolutions);
   const sum = reconSummary(rows);
 
   const handleExportAll = () => {
@@ -34,6 +42,7 @@ export default function Reports() {
     const reconSheet = rows.map(r => ({
       Status: r.status, 'Invoice No': r.invoiceNo, Date: r.invoiceDate, GSTIN: r.gstin, Supplier: r.supplierName,
       'Books Taxable': r.booksTaxable, '2B Taxable': r.g2bTaxable, 'Books Tax': r.booksTax, '2B Tax': r.g2bTax, 'Diff (Tax)': r.diffTax,
+      Remark: r.remark || '',
     }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reconSheet), 'Reconciliation');
 
@@ -109,10 +118,10 @@ export default function Reports() {
         }
         const b = bySupplier[key];
         if (r.status === 'Matched') b.matched++;
-        if (r.status === 'Amount Mismatch') b.mismatch++;
-        if (r.status === 'Missing in 2B') b.missing2b++;
-        if (r.status === 'Missing in Books') b.missingBooks++;
-        if (r.status === 'Duplicate') b.dup++;
+        else if (r.status === 'Not in 2B') b.missing2b++;
+        else if (r.status === 'Not in Books') b.missingBooks++;
+        else if (r.status === 'Duplicate Invoice') b.dup++;
+        else b.mismatch++;
         b.taxDiff += Math.abs(r.diffTax || 0);
       });
       const list = Object.values(bySupplier).sort((a, b) => b.taxDiff - a.taxDiff);
@@ -179,12 +188,12 @@ export default function Reports() {
     }
     
     if (activeTab === 'Mismatch Report') {
-      const mism = rows.filter(r => r.status === 'Amount Mismatch');
+      const mism = rows.filter(r => ['Amount Mismatch', 'GST Mismatch', 'Date Mismatch', 'Taxable Value Mismatch', 'IGST Mismatch', 'CGST Mismatch', 'SGST Mismatch', 'Cess Mismatch', 'Multiple Match / Possible Match'].includes(r.status));
       return <ReconTable rows={mism} />;
     }
     
     if (activeTab === 'Missing Invoice Report') {
-      const missing = rows.filter(r => r.status === 'Missing in 2B' || r.status === 'Missing in Books');
+      const missing = rows.filter(r => r.status === 'Not in 2B' || r.status === 'Not in Books');
       return <ReconTable rows={missing} />;
     }
     

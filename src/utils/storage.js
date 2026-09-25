@@ -22,6 +22,7 @@ export function defaultState(){
     gstr2b: [],
     gstr2b_gov: [],
     rcm: [],
+    resolutions: {},
     gstr1: [],
     settings: { tolerance: 1, normalizeInvoice: true, theme: 'light' },
     reconciliationFilter: 'all',

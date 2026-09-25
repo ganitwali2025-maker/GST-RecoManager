@@ -89,6 +89,23 @@ export function AppProvider({ children }) {
     });
   };
 
+  const resolutions = state.resolutions || {};
+
+  const resolveMismatch = (id, res) => {
+    updateState({
+      resolutions: {
+        ...resolutions,
+        [id]: { ...res, timestamp: Date.now() }
+      }
+    });
+  };
+
+  const undoResolve = (id) => {
+    const copy = { ...resolutions };
+    delete copy[id];
+    updateState({ resolutions: copy });
+  };
+
   const clearAllData = () => {
     setState(defaultState());
   };
@@ -116,6 +133,9 @@ export function AppProvider({ children }) {
     loadSample,
     clearAllData,
     toggleTheme,
+    resolutions,
+    resolveMismatch,
+    undoResolve,
     FY_LIST,
     MONTHS
   };
