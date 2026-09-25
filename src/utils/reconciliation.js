@@ -1,7 +1,7 @@
 import { rowKey, taxTotal, parseInvoiceDate } from './invoice';
 import { MONTHS } from './storage';
 
-export function runReconciliation(books, g2b, allG2b, tol, normalizeInvoiceSetting, resolutions = {}) {
+export function runReconciliation(books, g2b, tol, normalizeInvoiceSetting, resolutions = {}, allG2b = null) {
   const bookKeyCount = {};
   books.forEach(r => { const k = rowKey(r, normalizeInvoiceSetting); bookKeyCount[k] = (bookKeyCount[k]||0)+1; });
   const g2bKeyCount = {};

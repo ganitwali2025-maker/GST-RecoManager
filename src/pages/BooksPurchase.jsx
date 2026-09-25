@@ -18,7 +18,7 @@ export default function BooksPurchase() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const reconRows = runReconciliation(currentBooks, currentGstr2b, fyGstr2b, settings.tolerance, settings.normalizeInvoice, resolutions);
+  const reconRows = runReconciliation(currentBooks, currentGstr2b, settings.tolerance, settings.normalizeInvoice, resolutions, fyGstr2b);
   const sum = reconSummary(reconRows);
   
   const statusMap = {};
