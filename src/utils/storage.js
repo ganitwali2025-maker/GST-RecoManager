@@ -23,7 +23,7 @@ export function defaultState(){
     gstr2b_gov: [],
     rcm: [],
     gstr1: [],
-    settings: { tolerance: 1, normalizeInvoice: true, theme: 'dark' },
+    settings: { tolerance: 1, normalizeInvoice: true, theme: 'light' },
     reconciliationFilter: 'all',
     reconView: 'match',
     outputGst: {},
