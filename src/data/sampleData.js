@@ -14,6 +14,16 @@ export function getSampleData(companyId, financialYear, month) {
     {name:'State Electricity Board', gstin:'23GOVTE5678K1Z2'},
   ];
   
+  const customers = [
+    {name:'Reliance Retail', gstin:'27AAACR1234F1Z1', pos: '27-Maharashtra'},
+    {name:'Adani Enterprises', gstin:'24AAACA5678K1Z9', pos: '24-Gujarat'},
+    {name:'Tata Motors', gstin:'27AAACT4321L1Z3', pos: '27-Maharashtra'},
+    {name:'Infosys Ltd', gstin:'29AAACI9988M1Z6', pos: '29-Karnataka'},
+    {name:'Wipro Ltd', gstin:'29AAACW3345P1Z8', pos: '29-Karnataka'},
+    {name:'Maruti Suzuki', gstin:'06AAACM1234F1Z1', pos: '06-Haryana'},
+    {name:'Larsen & Toubro', gstin:'27AAACL5678K1Z2', pos: '27-Maharashtra'},
+  ];
+  
   const mk = (i, over={}) => {
     const s = suppliers[i % suppliers.length];
     const taxable = 10000 + i*1370;
@@ -27,8 +37,23 @@ export function getSampleData(companyId, financialYear, month) {
     }, over);
   };
 
+  const mkSales = (i, over={}) => {
+    const c = customers[i % customers.length];
+    const taxable = 25000 + i*4200;
+    // Simulate Inter-state if pos is not Maharashtra (assuming company is in Maharashtra for sample)
+    const isInterState = c.pos !== '27-Maharashtra';
+    const igst = isInterState ? Math.round(taxable*0.18) : 0;
+    const cgst = !isInterState ? Math.round(taxable*0.09) : 0;
+    const sgst = !isInterState ? Math.round(taxable*0.09) : 0;
+    return Object.assign({ id: uid(), companyId, fy: financialYear, month,
+      invoiceNo: 'SALES-'+(5000+i), invoiceDate: `14-${MONTHS.indexOf(month)+1<10?'0':''}${MONTHS.indexOf(month)+1}-2025`,
+      gstin: c.gstin, customerName: c.name, pos: c.pos, taxable, igst, cgst, sgst, cess: 0,
+    }, over);
+  };
+
   const books = [];
   const g2b = [];
+  const gstr1 = [];
   for(let i=0;i<14;i++) books.push(mk(i));
   for(let i=0;i<14;i++){
     if(i===2){ continue; } // missing in 2B
@@ -38,6 +63,8 @@ export function getSampleData(companyId, financialYear, month) {
   g2b.push(mk(20)); // missing in books
   g2b.push(mk(21));
   books.push(mk(8)); // duplicate in books (same key as i=8)
+
+  for(let i=0;i<12;i++) gstr1.push(mkSales(i)); // Generate 12 sales invoices
 
   const gv = govtSuppliers[0];
   g2b.push({ id: uid(), companyId, fy: financialYear, month, invoiceNo:'GOV-501', invoiceDate:`10-${MONTHS.indexOf(month)+1<10?'0':''}${MONTHS.indexOf(month)+1}-2025`,
@@ -53,5 +80,6 @@ export function getSampleData(companyId, financialYear, month) {
       gstin:'URP0000000000001', supplierName:'Legal Consultancy Services', taxable:12500, igst:2250, cgst:0, sgst:0, cess:0 },
   ];
 
-  return { books, g2b, rcm };
+  return { books, g2b, rcm, gstr1 };
 }
+

@@ -6,7 +6,7 @@ export function fmtINR(n){
   let rest = s.length > 3 ? s.slice(0, -3) : '';
   if(rest !== '') last3 = ',' + last3;
   rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-  return (neg?'-':'') + rest + last3 + ' ₹';
+  return (neg?'-':'') + '₹ ' + rest + last3;
 }
 
 export function fmtNum(n){ return Number(n||0).toLocaleString('en-IN'); }

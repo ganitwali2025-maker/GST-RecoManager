@@ -33,7 +33,15 @@ export function AppProvider({ children }) {
     (r) => r.companyId === state.activeCompanyId && r.fy === state.financialYear && r.month === state.month
   );
 
+  const currentGstr1 = state.gstr1.filter(
+    (r) => r.companyId === state.activeCompanyId && r.fy === state.financialYear && r.month === state.month
+  );
+
   const fyGstr2b = state.gstr2b.filter(
+    (r) => r.companyId === state.activeCompanyId && r.fy === state.financialYear
+  );
+
+  const fyGstr1 = state.gstr1.filter(
     (r) => r.companyId === state.activeCompanyId && r.fy === state.financialYear
   );
 
@@ -67,13 +75,15 @@ export function AppProvider({ children }) {
     let newBooks = state.books.filter(r => !(r.companyId===co && r.fy===fy && r.month===mo));
     let newGstr2b = state.gstr2b.filter(r => !(r.companyId===co && r.fy===fy && r.month===mo));
     let newRcm = state.rcm.filter(r => !(r.companyId===co && r.fy===fy && r.month===mo));
+    let newGstr1 = state.gstr1.filter(r => !(r.companyId===co && r.fy===fy && r.month===mo));
 
     const sample = getSampleData(co, fy, mo);
     
     updateState({
       books: [...newBooks, ...sample.books],
       gstr2b: [...newGstr2b, ...sample.g2b],
-      rcm: [...newRcm, ...sample.rcm]
+      rcm: [...newRcm, ...sample.rcm],
+      gstr1: [...newGstr1, ...(sample.gstr1 || [])]
     });
   };
 
@@ -123,7 +133,9 @@ export function AppProvider({ children }) {
     currentBooks,
     currentGstr2b,
     currentRcm,
+    currentGstr1,
     fyGstr2b,
+    fyGstr1,
     activeCompany,
     currentOutputGst,
     saveOutputGst,
